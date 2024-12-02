@@ -4,6 +4,7 @@ kind: Deployment
 metadata:
   name: spring-sparta-app-deployment
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: spring-sparta-app # Label to match Pods for the Deployment
