@@ -27,7 +27,7 @@ spec:
             done;
       containers:
       - name: spring-sparta-app
-        image: gina98/library-app
+        image: gina98/library-test-app
         ports:
         - containerPort: 5000
         env:
