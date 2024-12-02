@@ -1,89 +1,119 @@
 ---
+# database pvc
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-db-pvc
+  labels:
+    type: local
+spec:
+  volumeName: app-db-pv
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Mi
+
+---
+# database pv
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: app-db-pv
+  labels:
+    type: local
+spec:
+  claimRef:
+    namespace: default
+    name: app-db-pvc
+  storageClassName: manual
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /var/lib/mysql
+
+---
+# database deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deployment
+spec:
+  selector:
+    matchLabels:
+      app: java-app-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: java-app-db
+    spec:
+      containers:
+      - name: java-app-db
+        image: mysql
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: password
+          - name: MYSQL_DATABASE
+            value: library
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+          - name: db-storage
+            mountPath: /var/lib/mysql
+          - name: init-script
+            mountPath: /docker-entrypoint-initdb.d/library.sql
+            subPath: library.sql
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: app-db-pvc
+      - name: init-script
+        configMap:
+          name: library-sql-configmap
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-app-db-svc
+  namespace: default
+spec:
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+  selector:
+    app: java-app-db
+  type: ClusterIP
+
+---
+# ConfigMap for initial SQL script
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: database-seed
+  name: library-sql-configmap
 data:
   library.sql: |
     DROP DATABASE IF EXISTS library;
     CREATE DATABASE library;
     USE library;
+
     CREATE TABLE authors (
-      author_id int PRIMARY KEY NOT NULL AUTO_INCREMENT,
-      full_name VARCHAR(40)
+    author_id int PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    full_name VARCHAR(40)
     );
     CREATE TABLE books (
-      book_id int PRIMARY KEY NOT NULL AUTO_INCREMENT,
-      title VARCHAR(100),
-      author_id int,
-      FOREIGN KEY (author_id) REFERENCES authors(author_id)
+    book_id int PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    title VARCHAR(100),
+    author_id int,
+    FOREIGN KEY (author_id) REFERENCES authors(author_id)
     );
-    INSERT INTO authors (full_name) VALUES ('Phil');
-    INSERT INTO authors (full_name) VALUES ('William Shakespeare');
-    INSERT INTO authors (full_name) VALUES ('Jane Austen');
-    INSERT INTO authors (full_name) VALUES ('Charles Dickens');
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: db-data-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Mi
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: spring-database
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: spring-database
-  template:
-    metadata:
-      labels:
-        app: spring-database
-    spec:
-      containers:
-      - name: mysql
-        image: mysql:8.0
-        ports:
-        - containerPort: 3306
-        resources: # Resource limits for the container
-          limits:
-            memory: "512Mi" # Maximum memory the container can use (128 MiB)
-            cpu: "500m" # Maximum CPU the container can use (500 milliCPU, or 0.5 cores)
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "root"
-        - name: MYSQL_DATABASE
-          value: "library"
-        volumeMounts:
-        - name: db-data
-          mountPath: /var/lib/mysql
-        - name: db-seed
-          mountPath: /docker-entrypoint-initdb.d/library.sql
-          subPath: library.sql
-      volumes:
-      - name: db-data
-        persistentVolumeClaim:
-          claimName: db-data-pvc
-      - name: db-seed
-        configMap:
-          name: database-seed
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: spring-database
-spec:
-  ports:
-  - port: 3306
-    targetPort: 3306
-  selector:
-    app: spring-database
----
+
+    INSERT INTO library.authors (full_name) VALUES ('Phil');
+    INSERT INTO library.authors (full_name) VALUES ('William Shakespeare');
+    INSERT INTO library.authors (full_name) VALUES ('Jane Austen');
+    INSERT INTO library.authors (full_name) VALUES ('Charlees Dickeens');

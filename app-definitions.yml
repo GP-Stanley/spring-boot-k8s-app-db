@@ -1,45 +1,61 @@
 ---
+# Sparta app deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spring-sparta-app-deployment
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: spring-sparta-app # Label to match Pods for the Deployment
+      app: spring-sparta-app
+  replicas: 1
   template:
     metadata:
       labels:
-        app: spring-sparta-app # Ensure this matches the Service selector
+        app: spring-sparta-app
     spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox
+        command:
+          - sh
+          - -c
+          - >
+            until nc -z java-app-db-svc 3306; do
+              echo "Waiting for database...";
+              sleep 5;
+            done;
       containers:
       - name: spring-sparta-app
         image: gina98/library-app:v2
-        resources:
-          limits:
-            memory: "256Mi"
-            cpu: "500m"
         ports:
         - containerPort: 5000
         env:
-        - name: SPRING_DATASOURCE_URL
-          value: jdbc:mysql://spring-database:3306/library
-        - name: SPRING_DATASOURCE_USERNAME
-          value: root
-        - name: SPRING_DATASOURCE_PASSWORD
-          value: root
+        - name: DB_HOST
+          value: jdbc:mysql://java-app-db-svc:3306/library
+        - name: DB_USER
+          value: gina98
+        - name: DB_PASS
+          value: Stok3s:12!
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: spring-sparta-app-service # Use a distinct and meaningful name
+  name: spring-sparta-app-service
+  namespace: default
 spec:
-  selector:
-    app: spring-sparta-app # Matches the label in the Deployment
   ports:
-  - nodePort: 30002
+  - nodePort: 30001
     port: 5000
     targetPort: 5000
+  selector:
+    app: spring-sparta-app
   type: NodePort
----
