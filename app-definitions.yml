@@ -28,6 +28,7 @@ spec:
       containers:
       - name: spring-sparta-app
         image: gina98/java-test-app
+        Image ID: sha256:183ab2c0af7be57c6197a21d6dbf63bf4ec895dc5a87e63c4db949273d48ed0d
         ports:
         - containerPort: 5000
         env:
