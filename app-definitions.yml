@@ -8,6 +8,8 @@ spec:
   selector:
     matchLabels:
       app: spring-sparta-app
+
+  # Create replicaset
   replicas: 1
   template:
     metadata:
@@ -27,7 +29,8 @@ spec:
             done;
       containers:
       - name: spring-sparta-app
-        image: gina98/java-test-app:latest
+        image: gina98/java-test-app:v3
+        imagePullPolicy: Always  # Explicitly set to always pull
         ports:
         - containerPort: 5000
         env:
@@ -59,3 +62,31 @@ spec:
   selector:
     app: spring-sparta-app
   type: NodePort
+
+---
+# ConfigMap for initial SQL script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: library-sql-configmap
+data:
+  library.sql: |
+    DROP DATABASE IF EXISTS library;
+    CREATE DATABASE library;
+    USE library;
+
+    CREATE TABLE authors (
+    author_id int PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    full_name VARCHAR(40)
+    );
+    CREATE TABLE books (
+    book_id int PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    title VARCHAR(100),
+    author_id int,
+    FOREIGN KEY (author_id) REFERENCES authors(author_id)
+    );
+
+    INSERT INTO library.authors (full_name) VALUES ('Phil');
+    INSERT INTO library.authors (full_name) VALUES ('William Shakespeare');
+    INSERT INTO library.authors (full_name) VALUES ('Jane Austen');
+    INSERT INTO library.authors (full_name) VALUES ('Charles Dickens');
