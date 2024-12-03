@@ -37,7 +37,7 @@ spec:
         - name: DB_HOST
           value: jdbc:mysql://java-app-db-svc:3306/library
         - name: DB_USER
-          value: gina98
+          value: root
         - name: DB_PASS
           value: Stok3s:12!
         resources:
