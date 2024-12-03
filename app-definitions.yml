@@ -29,7 +29,7 @@ spec:
             done;
       containers:
       - name: spring-sparta-app
-        image: gina98/java-test-app:v3
+        image: gina98/java-test-app:latest
         imagePullPolicy: Always  # Explicitly set to always pull
         ports:
         - containerPort: 5000
