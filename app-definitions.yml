@@ -37,16 +37,18 @@ spec:
         - name: DB_HOST
           value: jdbc:mysql://java-app-db-svc:3306/library
         - name: DB_USER
-          value: root
+          value: gina98
         - name: DB_PASS
           value: Stok3s:12!
         resources:
           requests:
             cpu: "100m"
             memory: "128Mi"
+            ephemeral-storage: "1Gi" # Request 1Gi of ephemeral storage
           limits:
             cpu: "500m"
             memory: "512Mi"
+            ephemeral-storage: "2Gi" # Limit to 2Gi of ephemeral storage
 
 ---
 apiVersion: v1
